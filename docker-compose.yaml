@@ -1,0 +1,48 @@
+services:
+  server:
+    container_name: server
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongo
+    environment:
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongo:27017
+      - JWT_SECRET=very-secret-key
+      - JWT_EXPIRES_IN=24h
+      - CORS_ORIGIN=http://localhost:5173
+      - STORIES_EXPIRATION_SECONDS=86400 # 24 часа
+      - STORIES_CLEANUP_BATCH_SIZE=10
+
+  client:
+    container_name: client
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    environment:
+      - PRIVATE_API_URL=http://server:3000
+      - PUBLIC_API_URL=http://localhost:3000
+    depends_on:
+      - server
+
+  mongo:
+    image: mongo
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mount_data:/data/db
+
+volumes:
+  mount_data:
